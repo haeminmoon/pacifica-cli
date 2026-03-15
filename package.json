@@ -1,0 +1,63 @@
+{
+  "name": "@2oolkit/pacifica-cli",
+  "version": "0.1.0",
+  "description": "CLI toolkit for trading perpetual futures on Pacifica exchange",
+  "homepage": "https://github.com/haeminmoon/pacifica-cli#readme",
+  "bugs": {
+    "url": "https://github.com/haeminmoon/pacifica-cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haeminmoon/pacifica-cli.git"
+  },
+  "keywords": [
+    "pacifica",
+    "perpetual-futures",
+    "trading",
+    "cli",
+    "mcp",
+    "model-context-protocol",
+    "defi",
+    "solana",
+    "ed25519"
+  ],
+  "license": "MIT",
+  "author": "haeminmoon",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "bin": {
+    "pacifica-cli": "dist/index.js",
+    "pacifica-mcp": "dist/mcp.js"
+  },
+  "files": [
+    "dist",
+    "skill"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "ts-node src/index.ts",
+    "lint": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "axios": "^1.7.9",
+    "bs58": "^6.0.0",
+    "commander": "^13.1.0",
+    "dotenv": "^17.3.1",
+    "tweetnacl": "^1.0.3",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
