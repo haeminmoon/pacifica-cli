@@ -6,15 +6,12 @@ export interface SignedPayload {
   signature: string;
   timestamp: number;
   expiry_window?: number;
-  agent_wallet?: string;
   [key: string]: unknown;
 }
 
 export interface SignerConfig {
   privateKey: string;
   account: string;
-  agentPrivateKey?: string;
-  agentWallet?: string;
 }
 
 function sortJsonKeys(value: unknown): unknown {
@@ -65,9 +62,7 @@ export function signPayload(
   const message = prepareMessage(type, timestamp, expiryWindow, data);
   const messageBytes = new TextEncoder().encode(message);
 
-  // Use agent key if available, otherwise use main private key
-  const signingKey = config.agentPrivateKey || config.privateKey;
-  const keypair = getKeypairFromPrivateKey(signingKey);
+  const keypair = getKeypairFromPrivateKey(config.privateKey);
   const signatureBytes = nacl.sign.detached(messageBytes, keypair.secretKey);
   const signature = bs58.encode(signatureBytes);
 
@@ -78,10 +73,6 @@ export function signPayload(
     expiry_window: expiryWindow,
     ...data,
   };
-
-  if (config.agentWallet) {
-    payload.agent_wallet = config.agentWallet;
-  }
 
   return payload;
 }

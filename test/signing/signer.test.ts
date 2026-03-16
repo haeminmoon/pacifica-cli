@@ -31,23 +31,6 @@ describe("signPayload", () => {
     expect(result.foo).toBe("bar");
   });
 
-  it("includes agent_wallet when provided", () => {
-    const agentKeypair = nacl.sign.keyPair.fromSeed(
-      new Uint8Array(32).fill(2)
-    );
-
-    const config = {
-      privateKey: testPrivateKey,
-      account: testPublicKey,
-      agentPrivateKey: bs58.encode(agentKeypair.secretKey),
-      agentWallet: bs58.encode(agentKeypair.publicKey),
-    };
-
-    const result = signPayload(config, "test_type", { foo: "bar" });
-
-    expect(result.agent_wallet).toBe(config.agentWallet);
-  });
-
   it("signature is verifiable", () => {
     const config = {
       privateKey: testPrivateKey,
@@ -58,7 +41,7 @@ describe("signPayload", () => {
     const signatureBytes = bs58.decode(result.signature);
 
     // Reconstruct the message that was signed
-    const { account, signature, agent_wallet, ...rest } = result;
+    const { account, signature, ...rest } = result;
     const header = {
       type: "test_type",
       timestamp: rest.timestamp,

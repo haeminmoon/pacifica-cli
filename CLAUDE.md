@@ -13,19 +13,19 @@ CLI toolkit & MCP server for trading perpetual futures on the Pacifica exchange.
 ## Commands
 
 ```
-npm run build    # tsup 빌드
-npm run dev      # ts-node 로컬 실행
-npm test         # jest 테스트 (24 tests)
-npm run lint     # tsc --noEmit (메모리 부족 시 NODE_OPTIONS="--max-old-space-size=4096")
+npm run build    # tsup build
+npm run dev      # ts-node local run
+npm test         # jest tests (23 tests)
+npm run lint     # tsc --noEmit (if OOM: NODE_OPTIONS="--max-old-space-size=4096")
 ```
 
 ## Architecture
 
 ```
 src/
-├── index.ts                  # CLI 엔트리포인트
-├── mcp.ts                    # MCP 서버 엔트리포인트 (17 tools)
-├── client/api-client.ts      # PacificaApiClient (axios 기반 REST 클라이언트)
+├── index.ts                  # CLI entrypoint
+├── mcp.ts                    # MCP server entrypoint (17 tools)
+├── client/api-client.ts      # PacificaApiClient (axios-based REST client)
 ├── commands/
 │   ├── _helpers.ts           # createPublicClient(), withAuth() → AuthContext
 │   ├── config.ts             # config init|set|get|list
@@ -35,9 +35,9 @@ src/
 │   └── position.ts           # position list
 ├── config/
 │   ├── constants.ts          # BASE_URLS, ENV_ALIASES, resolveEnv()
-│   └── store.ts              # ~/.pacifica-cli/ config.json + session.json (0o600)
+│   └── store.ts              # ~/.pacifica-cli/ config.json (0o600)
 ├── signing/
-│   └── signer.ts             # Ed25519 서명 (tweetnacl + bs58)
+│   └── signer.ts             # Ed25519 signing (tweetnacl + bs58)
 ├── output/
 │   ├── formatter.ts          # output() → json | table
 │   └── error.ts              # ActionableError, handleError()
@@ -51,26 +51,26 @@ src/
 - **Testnet**: `https://test-api.pacifica.fi/api/v1`
 - **Docs**: https://docs.pacifica.fi/api-documentation/api
 
-### Public Endpoints (GET, 서명 불필요)
+### Public Endpoints (GET, no signature required)
 
-| Endpoint                                   | Description        |
-| ------------------------------------------ | ------------------ |
-| `GET /info`                                | 전체 마켓 정보     |
-| `GET /info/prices`                         | 전체 심볼 가격     |
-| `GET /book?symbol=`                        | 오더북             |
-| `GET /trades?symbol=`                      | 최근 체결          |
-| `GET /kline?symbol=&interval=&start_time=` | 캔들 차트          |
-| `GET /kline/mark_price`                    | 마크 프라이스 캔들 |
-| `GET /funding_rate/history?symbol=`        | 펀딩 히스토리      |
-| `GET /account?account=`                    | 계정 정보          |
-| `GET /account/settings?account=`           | 마진/레버리지 설정 |
-| `GET /positions?account=`                  | 포지션             |
-| `GET /orders?account=`                     | 미체결 주문        |
-| `GET /orders/history?account=`             | 주문 히스토리      |
-| `GET /trades/history?account=`             | 체결 히스토리      |
-| `GET /funding/history?account=`            | 펀딩 히스토리      |
+| Endpoint                                   | Description              |
+| ------------------------------------------ | ------------------------ |
+| `GET /info`                                | All market info          |
+| `GET /info/prices`                         | All symbol prices        |
+| `GET /book?symbol=`                        | Orderbook                |
+| `GET /trades?symbol=`                      | Recent trades            |
+| `GET /kline?symbol=&interval=&start_time=` | Candlestick data         |
+| `GET /kline/mark_price`                    | Mark price candles       |
+| `GET /funding_rate/history?symbol=`        | Funding rate history     |
+| `GET /account?account=`                    | Account info             |
+| `GET /account/settings?account=`           | Margin & leverage config |
+| `GET /positions?account=`                  | Positions                |
+| `GET /orders?account=`                     | Open orders              |
+| `GET /orders/history?account=`             | Order history            |
+| `GET /trades/history?account=`             | Trade history            |
+| `GET /funding/history?account=`            | Funding history          |
 
-### Private Endpoints (POST, Ed25519 서명 필요)
+### Private Endpoints (POST, Ed25519 signature required)
 
 | Endpoint                     | Type (for signing)    |
 | ---------------------------- | --------------------- |
@@ -83,46 +83,40 @@ src/
 
 ### Signing Mechanism
 
-1. JSON 메시지 구성: `{ type, timestamp, expiry_window, data: { ...payload } }`
-2. JSON 키를 알파벳순으로 재귀적 정렬
-3. compact JSON (`separators=(",",":")`) 직렬화
-4. Ed25519 서명 (tweetnacl `sign.detached`)
-5. base58 인코딩된 signature를 요청 body에 포함
-6. Agent Wallet 사용 시 `agent_wallet` 필드 추가
+1. Compose JSON message: `{ type, timestamp, expiry_window, data: { ...payload } }`
+2. Sort JSON keys recursively (alphabetical)
+3. Serialize as compact JSON (`separators=(",",":")`)
+4. Sign with Ed25519 (tweetnacl `sign.detached`)
+5. Include base58-encoded signature in the request body
 
 ### Order Sides & Types
 
-- sides: `bid` (매수), `ask` (매도)
-- tif: `GTC`, `IOC`, `ALO`, `TOB`
-- position sides: `open_long`, `open_short`, `close_long`, `close_short`
+- Sides: `bid` (buy/long), `ask` (sell/short)
+- TIF: `GTC`, `IOC`, `ALO`, `TOB`
+- Position sides: `open_long`, `open_short`, `close_long`, `close_short`
 
 ## Configuration
 
-설정 파일 위치: `~/.pacifica-cli/config.json` (파일 퍼미션 0o600)
+Config file location: `~/.pacifica-cli/config.json` (file permissions 0o600)
 
 ```json
 {
   "env": "mainnet",
   "privateKey": "base58 encoded Ed25519 private key",
-  "account": "derived public key",
-  "agentPrivateKey": "optional agent wallet private key",
-  "agentWallet": "optional agent wallet public key"
+  "account": "derived public key"
 }
 ```
 
-환경변수로 오버라이드 가능:
+Environment variable overrides:
 
-- `PACIFICA_ENV`
-- `PACIFICA_PRIVATE_KEY`
-- `PACIFICA_ACCOUNT`
-- `PACIFICA_AGENT_PRIVATE_KEY`
-- `PACIFICA_AGENT_WALLET`
+- `PACIFICA_WALLET_PRIVATE_KEY`
+- `PACIFICA_WALLET_ADDRESS`
 
 ## Key Dependencies
 
-- `commander` - CLI 파싱
-- `axios` - HTTP 클라이언트
-- `tweetnacl` - Ed25519 서명
-- `bs58` - Base58 인코딩/디코딩
-- `@modelcontextprotocol/sdk` - MCP 서버
-- `zod` - MCP 입력 검증
+- `commander` - CLI parsing
+- `axios` - HTTP client
+- `tweetnacl` - Ed25519 signing
+- `bs58` - Base58 encoding/decoding
+- `@modelcontextprotocol/sdk` - MCP server
+- `zod` - MCP input validation

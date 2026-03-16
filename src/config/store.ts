@@ -1,13 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { CONFIG_DIR, CONFIG_FILE, resolveEnv } from "./constants";
+import { CONFIG_DIR, CONFIG_FILE } from "./constants";
 
 export interface CliConfig {
   env: string;
   privateKey?: string;
   account?: string;
-  agentPrivateKey?: string;
-  agentWallet?: string;
 }
 
 const DEFAULT_CONFIG: CliConfig = {
@@ -50,14 +48,9 @@ export function getEffectiveConfig(): CliConfig {
   const fileConfig = loadConfig();
 
   return {
-    env: process.env.PACIFICA_ENV
-      ? resolveEnv(process.env.PACIFICA_ENV)
-      : fileConfig.env,
-    privateKey: process.env.PACIFICA_PRIVATE_KEY || process.env.PACIFICA_WALLET_PRIVATE_KEY || fileConfig.privateKey,
-    account: process.env.PACIFICA_ACCOUNT || process.env.PACIFICA_WALLET_ADDRESS || fileConfig.account,
-    agentPrivateKey:
-      process.env.PACIFICA_AGENT_PRIVATE_KEY || fileConfig.agentPrivateKey,
-    agentWallet: process.env.PACIFICA_AGENT_WALLET || fileConfig.agentWallet,
+    env: fileConfig.env,
+    privateKey: process.env.PACIFICA_WALLET_PRIVATE_KEY || fileConfig.privateKey,
+    account: process.env.PACIFICA_WALLET_ADDRESS || fileConfig.account,
   };
 }
 

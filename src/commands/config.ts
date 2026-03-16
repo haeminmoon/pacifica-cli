@@ -65,46 +65,24 @@ export function registerConfigCommands(program: Command): void {
     .action(async () => {
       console.log("\n  Pacifica CLI Configuration\n");
 
-      const env = await prompt("  Environment (mainnet/testnet) [mainnet]: ");
-      const resolvedEnv = env ? resolveEnv(env) : "mainnet";
-
-      const privateKey = await prompt("  Private Key (base58): ", true);
+      const privateKey = await prompt("  Wallet Private Key (base58): ", true);
       if (!privateKey) {
-        console.error("  Private key is required.");
+        console.error("  Wallet private key is required.");
         process.exit(1);
       }
 
       let account: string;
       try {
         account = getPublicKeyFromPrivate(privateKey);
-        console.log(`  Derived account: ${account}`);
+        console.log(`  Derived wallet address: ${account}`);
       } catch {
-        console.error("  Invalid private key format.");
+        console.error("  Invalid wallet private key format.");
         process.exit(1);
       }
 
-      const agentKey = await prompt(
-        "  Agent Private Key (optional, press Enter to skip): ",
-        true
-      );
-
-      let agentWallet: string | undefined;
-      if (agentKey) {
-        try {
-          agentWallet = getPublicKeyFromPrivate(agentKey);
-          console.log(`  Derived agent wallet: ${agentWallet}`);
-        } catch {
-          console.error("  Invalid agent private key format.");
-          process.exit(1);
-        }
-      }
-
       saveConfig({
-        env: resolvedEnv,
         privateKey,
         account,
-        agentPrivateKey: agentKey || undefined,
-        agentWallet,
       });
 
       console.log("\n  Configuration saved successfully!\n");
@@ -120,8 +98,6 @@ export function registerConfigCommands(program: Command): void {
         "env",
         "privateKey",
         "account",
-        "agentPrivateKey",
-        "agentWallet",
       ];
       if (!validKeys.includes(key)) {
         console.error(`Invalid key. Valid keys: ${validKeys.join(", ")}`);
@@ -145,7 +121,7 @@ export function registerConfigCommands(program: Command): void {
       const value = cfg[key as keyof CliConfig];
       if (value === undefined) {
         console.log(`  ${key}: (not set)`);
-      } else if (key === "privateKey" || key === "agentPrivateKey") {
+      } else if (key === "privateKey") {
         console.log(`  ${key}: ${maskSecret(String(value))}`);
       } else {
         console.log(`  ${key}: ${value}`);
@@ -161,7 +137,7 @@ export function registerConfigCommands(program: Command): void {
       for (const [key, value] of Object.entries(cfg)) {
         if (value === undefined) continue;
         const display =
-          key === "privateKey" || key === "agentPrivateKey"
+          key === "privateKey"
             ? maskSecret(String(value))
             : String(value);
         console.log(`  ${key.padEnd(20)} ${display}`);

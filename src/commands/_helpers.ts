@@ -19,8 +19,6 @@ export function createAuthClient(): { client: PacificaApiClient; account: string
   const signerConfig: SignerConfig = {
     privateKey: config.privateKey,
     account: config.account,
-    agentPrivateKey: config.agentPrivateKey,
-    agentWallet: config.agentWallet,
   };
   return { client: new PacificaApiClient(config.env, signerConfig), account: config.account };
 }
@@ -38,8 +36,6 @@ export function withAuth(): AuthContext {
   const signerConfig: SignerConfig = {
     privateKey: config.privateKey,
     account: config.account,
-    agentPrivateKey: config.agentPrivateKey,
-    agentWallet: config.agentWallet,
   };
 
   const client = new PacificaApiClient(config.env, signerConfig);

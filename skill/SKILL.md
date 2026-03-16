@@ -20,10 +20,10 @@ metadata:
   openclaw:
     emoji: "🌊"
     homepage: "https://pacifica.fi"
-    primaryEnv: "PACIFICA_PRIVATE_KEY"
+    primaryEnv: "PACIFICA_WALLET_PRIVATE_KEY"
     requires:
       bins: ["pacifica-cli", "pacifica-mcp"]
-      env: ["PACIFICA_PRIVATE_KEY", "PACIFICA_ACCOUNT"]
+      env: ["PACIFICA_WALLET_PRIVATE_KEY", "PACIFICA_WALLET_ADDRESS"]
     install:
       - id: "pacifica-cli-npm"
         kind: "npm"
@@ -33,10 +33,10 @@ metadata:
   clawdbot:
     emoji: "🌊"
     homepage: "https://pacifica.fi"
-    primaryEnv: "PACIFICA_PRIVATE_KEY"
+    primaryEnv: "PACIFICA_WALLET_PRIVATE_KEY"
     requires:
       bins: ["pacifica-cli", "pacifica-mcp"]
-      env: ["PACIFICA_PRIVATE_KEY", "PACIFICA_ACCOUNT"]
+      env: ["PACIFICA_WALLET_PRIVATE_KEY", "PACIFICA_WALLET_ADDRESS"]
     install:
       - id: "pacifica-cli-npm"
         kind: "npm"
@@ -89,17 +89,11 @@ The wizard automatically derives your account address from the private key.
 **Alternative: Environment Variables**
 
 ```bash
-export PACIFICA_PRIVATE_KEY=<your-private-key>
-export PACIFICA_ACCOUNT=<your-account-address>
+export PACIFICA_WALLET_PRIVATE_KEY=<your-private-key>
+export PACIFICA_WALLET_ADDRESS=<your-wallet-address>
 ```
 
 A `.env` file in the working directory is also supported.
-
-**Important:** Before placing orders, approve the builder code once:
-
-```bash
-pacifica-cli account builder-approve
-```
 
 ### Verify Setup
 
@@ -217,7 +211,6 @@ All trading commands require a configured private key.
 | `pacifica-cli account margin-mode -s BTC --mode isolated` | Set margin mode |
 | `pacifica-cli account trades -s ETH -l 20` | Trade history |
 | `pacifica-cli account funding-history -l 20` | Funding payments |
-| `pacifica-cli account builder-approve` | Approve builder code (once) |
 
 ### Authentication & Config
 
@@ -393,10 +386,8 @@ Detail: {"error":"description"}
 
 | Variable | Description |
 |----------|-------------|
-| `PACIFICA_PRIVATE_KEY` | Ed25519 private key (overrides config) |
-| `PACIFICA_ACCOUNT` | Account public key (overrides config) |
-| `PACIFICA_AGENT_PRIVATE_KEY` | Agent wallet private key |
-| `PACIFICA_AGENT_WALLET` | Agent wallet public key |
+| `PACIFICA_WALLET_PRIVATE_KEY` | Wallet private key (Ed25519, base58, overrides config) |
+| `PACIFICA_WALLET_ADDRESS` | Wallet address / public key (base58, overrides config) |
 
 ## Configuration Files
 
@@ -412,7 +403,7 @@ For in-depth guides on specific topics:
 
 - **[references/trading.md](references/trading.md)** — Order types, position management, bracket orders, scaling strategies
 - **[references/market-data.md](references/market-data.md)** — Instrument discovery, orderbook analysis, funding rate strategies
-- **[references/authentication.md](references/authentication.md)** — Setup methods, security best practices, agent wallet delegation
+- **[references/authentication.md](references/authentication.md)** — Setup methods, security best practices
 
 ## MCP Server
 
@@ -430,7 +421,7 @@ claude mcp add pacifica -- pacifica-mcp
 }
 ```
 
-The MCP server exposes 18 tools: `get_market_info`, `get_prices`, `get_orderbook`, `get_recent_trades`, `get_candles`, `get_historical_funding`, `get_account_info`, `get_account_settings`, `get_positions`, `get_open_orders`, `get_order_history`, `get_trade_history`, `get_funding_history`, `create_market_order`, `create_limit_order`, `cancel_order`, `cancel_all_orders`, `update_leverage`, `update_margin_mode`, `approve_builder_code`.
+The MCP server exposes 17 tools: `get_market_info`, `get_prices`, `get_orderbook`, `get_recent_trades`, `get_candles`, `get_historical_funding`, `get_account_info`, `get_account_settings`, `get_positions`, `get_open_orders`, `get_order_history`, `get_trade_history`, `get_funding_history`, `create_market_order`, `create_limit_order`, `cancel_order`, `cancel_all_orders`, `update_leverage`, `update_margin_mode`.
 
 Credentials are shared with the CLI — set up once with `pacifica-cli config init`.
 

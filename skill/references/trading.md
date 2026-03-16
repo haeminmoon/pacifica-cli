@@ -201,4 +201,3 @@ Key fields:
 1. **Forgetting `--reduce-only`** when closing positions — may open an opposite position
 2. **Wrong side** — `bid` is buy/long, `ask` is sell/short
 3. **Order below minimum** — check `min_order_size` with `market info`
-4. **Not approving builder code** — run `account builder-approve` before first trade

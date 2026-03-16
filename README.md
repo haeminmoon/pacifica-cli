@@ -35,16 +35,13 @@ This installs both `pacifica-cli` (CLI) and `pacifica-mcp` (MCP server).
 # 1. Interactive setup (prompts for private key)
 pacifica-cli config init
 
-# 2. Approve builder code (required once before trading)
-pacifica-cli account builder-approve
-
-# 3. Check a price (no auth needed)
+# 2. Check a price (no auth needed)
 pacifica-cli market prices --symbol BTC
 
-# 4. Place a market buy
+# 3. Place a market buy
 pacifica-cli order market -s BTC -a 0.001 --side bid
 
-# 5. View open positions
+# 4. View open positions
 pacifica-cli position list
 ```
 
@@ -56,28 +53,19 @@ pacifica-cli position list
 pacifica-cli config init
 ```
 
-Prompts for:
-
-| Prompt            | Description                      | Format         |
-| ----------------- | -------------------------------- | -------------- |
-| **Environment**   | `mainnet` or `testnet`           | String         |
-| **Private Key**   | Ed25519 private key from wallet  | Base58 encoded |
-| **Agent Key**     | For delegated signing (optional) | Base58 encoded |
-
-Account address is automatically derived from the private key.
+Prompts for your Ed25519 private key (base58 encoded). Account address is automatically derived.
 
 **Manual setup:**
 
 ```bash
-pacifica-cli config set env mainnet
 pacifica-cli config set privateKey <base58-ed25519-private-key>
 ```
 
 **Environment variables (CI/CD, Docker):**
 
 ```bash
-export PACIFICA_PRIVATE_KEY=<your-private-key>
-export PACIFICA_ACCOUNT=<your-account>
+export PACIFICA_WALLET_PRIVATE_KEY=<your-private-key>
+export PACIFICA_WALLET_ADDRESS=<your-wallet-address>
 ```
 
 Config is stored at `~/.pacifica-cli/config.json` with `0600` permissions.
@@ -145,7 +133,6 @@ pacifica-cli account leverage -s BTC -l 20    # Set leverage
 pacifica-cli account margin-mode -s BTC --mode isolated
 pacifica-cli account trades -s ETH -l 20      # Trade history
 pacifica-cli account funding-history -l 20    # Funding payments
-pacifica-cli account builder-approve          # Approve builder code
 ```
 
 #### Config
@@ -205,7 +192,7 @@ Or without global install:
 }
 ```
 
-### Available Tools (20)
+### Available Tools (19)
 
 | Category        | Tools                                                                                            | Auth Required |
 | --------------- | ------------------------------------------------------------------------------------------------ | ------------- |
@@ -213,7 +200,7 @@ Or without global install:
 | **Orders**      | `create_market_order`, `create_limit_order`, `cancel_order`, `cancel_all_orders`, `get_open_orders`, `get_order_history` | Yes |
 | **Positions**   | `get_positions`                                                                                  | Yes           |
 | **Account**     | `get_account_info`, `get_account_settings`, `get_trade_history`, `get_funding_history`           | Yes           |
-| **Settings**    | `update_leverage`, `update_margin_mode`, `approve_builder_code`                                  | Yes           |
+| **Settings**    | `update_leverage`, `update_margin_mode`                                                          | Yes           |
 
 ### MCP Prerequisites
 
@@ -221,7 +208,6 @@ Before using MCP tools that require authentication, set up credentials via the C
 
 ```bash
 pacifica-cli config init         # Interactive setup
-pacifica-cli account builder-approve  # Required once before trading
 ```
 
 The MCP server reads the same config file as the CLI (`~/.pacifica-cli/`).
@@ -277,9 +263,8 @@ pacifica-cli order list -o json                # Open orders
 1. **Use `--reduce-only` for all exit orders** — prevents accidental position flips
 2. **Check instrument specs** before placing orders — `pacifica-cli market info --symbol BTC`
 3. **Check account balance** before large orders — `pacifica-cli account info`
-4. **Approve builder code once** before first trade — `pacifica-cli account builder-approve`
-5. **Start with small sizes** when testing strategies
-6. **Never expose your private key** — it's used locally for signing, never transmitted
+4. **Start with small sizes** when testing strategies
+5. **Never expose your private key** — it's used locally for signing, never transmitted
 
 ## Security
 
@@ -287,17 +272,12 @@ pacifica-cli order list -o json                # Open orders
 - **File permissions** — config file is created with `0600` (owner read/write only)
 - **Local signing** — Ed25519 signatures computed locally with `tweetnacl`, only signatures are transmitted
 - **Signature expiry** — each signed request includes a timestamp and expiry window to prevent replay attacks
-- **Agent wallet support** — delegate signing to a separate key, keep your main key in cold storage
-
 ## Environment Variables
 
-| Variable                     | Description                            |
-| ---------------------------- | -------------------------------------- |
-| `PACIFICA_ENV`               | `mainnet` or `testnet`                 |
-| `PACIFICA_PRIVATE_KEY`       | Ed25519 private key (base58)           |
-| `PACIFICA_ACCOUNT`           | Account public key (base58)            |
-| `PACIFICA_AGENT_PRIVATE_KEY` | Agent wallet private key               |
-| `PACIFICA_AGENT_WALLET`      | Agent wallet public key                |
+| Variable                       | Description                            |
+| ------------------------------ | -------------------------------------- |
+| `PACIFICA_WALLET_PRIVATE_KEY`  | Wallet private key (Ed25519, base58)   |
+| `PACIFICA_WALLET_ADDRESS`      | Wallet address / public key (base58)   |
 
 ## Resources
 
