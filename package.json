@@ -1,6 +1,6 @@
 {
   "name": "@2oolkit/pacifica-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI toolkit & MCP server for trading perpetual futures on Pacifica exchange — crypto, forex, commodities, equities on Solana",
   "homepage": "https://github.com/haeminmoon/pacifica-cli#readme",
   "bugs": {
