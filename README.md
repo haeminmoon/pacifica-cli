@@ -173,7 +173,10 @@ Add to your MCP config file:
 {
   "mcpServers": {
     "pacifica": {
-      "command": "pacifica-mcp"
+      "command": "pacifica-mcp",
+      "env": {
+        "PACIFICA_WALLET_PRIVATE_KEY": "<your-private-key>"
+      }
     }
   }
 }
@@ -186,11 +189,16 @@ Or without global install:
   "mcpServers": {
     "pacifica": {
       "command": "npx",
-      "args": ["-y", "-p", "@2oolkit/pacifica-cli", "pacifica-mcp"]
+      "args": ["-y", "-p", "@2oolkit/pacifica-cli", "pacifica-mcp"],
+      "env": {
+        "PACIFICA_WALLET_PRIVATE_KEY": "<your-private-key>"
+      }
     }
   }
 }
 ```
+
+The `env` field passes your credentials directly to the MCP server — no separate CLI config needed. Alternatively, you can set up credentials via `pacifica-cli config init` and omit the `env` field.
 
 ### Available Tools (19)
 
@@ -202,15 +210,12 @@ Or without global install:
 | **Account**     | `get_account_info`, `get_account_settings`, `get_trade_history`, `get_funding_history`           | Yes           |
 | **Settings**    | `update_leverage`, `update_margin_mode`                                                          | Yes           |
 
-### MCP Prerequisites
+### MCP Authentication
 
-Before using MCP tools that require authentication, set up credentials via the CLI:
+Credentials can be provided in two ways:
 
-```bash
-pacifica-cli config init         # Interactive setup
-```
-
-The MCP server reads the same config file as the CLI (`~/.pacifica-cli/`).
+1. **`env` field in MCP config (recommended)** — set `PACIFICA_WALLET_PRIVATE_KEY` directly in your MCP config as shown above
+2. **CLI config** — run `pacifica-cli config init` and the MCP server reads `~/.pacifica-cli/config.json` automatically
 
 ---
 

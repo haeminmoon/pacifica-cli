@@ -412,18 +412,25 @@ For AI agents that support MCP (Model Context Protocol), this package also ships
 ```bash
 # Claude Code
 claude mcp add pacifica -- pacifica-mcp
+```
 
-# Claude Desktop / Cursor / Windsurf — add to MCP config:
+```json
+// Claude Desktop / Cursor / Windsurf — add to MCP config:
 {
   "mcpServers": {
-    "pacifica": { "command": "pacifica-mcp" }
+    "pacifica": {
+      "command": "pacifica-mcp",
+      "env": {
+        "PACIFICA_WALLET_PRIVATE_KEY": "<your-private-key>"
+      }
+    }
   }
 }
 ```
 
-The MCP server exposes 17 tools: `get_market_info`, `get_prices`, `get_orderbook`, `get_recent_trades`, `get_candles`, `get_historical_funding`, `get_account_info`, `get_account_settings`, `get_positions`, `get_open_orders`, `get_order_history`, `get_trade_history`, `get_funding_history`, `create_market_order`, `create_limit_order`, `cancel_order`, `cancel_all_orders`, `update_leverage`, `update_margin_mode`.
+The `env` field passes credentials directly to the MCP server. Alternatively, run `pacifica-cli config init` and the MCP server reads `~/.pacifica-cli/config.json` automatically.
 
-Credentials are shared with the CLI — set up once with `pacifica-cli config init`.
+The MCP server exposes 19 tools: `get_market_info`, `get_prices`, `get_orderbook`, `get_recent_trades`, `get_candles`, `get_historical_funding`, `get_account_info`, `get_account_settings`, `get_positions`, `get_open_orders`, `get_order_history`, `get_trade_history`, `get_funding_history`, `create_market_order`, `create_limit_order`, `cancel_order`, `cancel_all_orders`, `update_leverage`, `update_margin_mode`.
 
 ## Resources
 

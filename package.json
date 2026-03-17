@@ -1,7 +1,7 @@
 {
   "name": "@2oolkit/pacifica-cli",
   "version": "0.1.1",
-  "description": "CLI toolkit for trading perpetual futures on Pacifica exchange",
+  "description": "CLI toolkit & MCP server for trading perpetual futures on Pacifica exchange — crypto, forex, commodities, equities on Solana",
   "homepage": "https://github.com/haeminmoon/pacifica-cli#readme",
   "bugs": {
     "url": "https://github.com/haeminmoon/pacifica-cli/issues"
@@ -13,13 +13,32 @@
   "keywords": [
     "pacifica",
     "perpetual-futures",
+    "perps",
+    "futures",
     "trading",
+    "trading-bot",
+    "trading-cli",
     "cli",
     "mcp",
+    "mcp-server",
     "model-context-protocol",
+    "ai-agent",
+    "claude",
+    "cursor",
+    "windsurf",
     "defi",
+    "dex",
     "solana",
-    "ed25519"
+    "crypto",
+    "forex",
+    "commodities",
+    "derivatives",
+    "exchange",
+    "orderbook",
+    "leverage",
+    "margin-trading",
+    "ed25519",
+    "openclaw"
   ],
   "license": "MIT",
   "author": "haeminmoon",

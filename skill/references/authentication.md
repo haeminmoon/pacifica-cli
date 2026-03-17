@@ -56,6 +56,25 @@ PACIFICA_WALLET_ADDRESS=<base58-public-key>
 
 Environment variables override config file values.
 
+### Method 4: MCP Config `env` Field
+
+When using the MCP server, you can pass credentials directly in the MCP config file:
+
+```json
+{
+  "mcpServers": {
+    "pacifica": {
+      "command": "pacifica-mcp",
+      "env": {
+        "PACIFICA_WALLET_PRIVATE_KEY": "<your-private-key>"
+      }
+    }
+  }
+}
+```
+
+This is the simplest setup for AI agents — no separate CLI config step needed.
+
 ### Verify Setup
 
 ```bash
