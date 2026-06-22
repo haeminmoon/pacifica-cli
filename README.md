@@ -82,9 +82,18 @@ pacifica-cli market prices --symbol BTC       # Single symbol
 pacifica-cli market orderbook BTC             # Orderbook
 pacifica-cli market orderbook BTC --depth 5   # With aggregation
 pacifica-cli market trades ETH                # Recent trades
-pacifica-cli market candles BTC -i 4h         # Candlestick data
+pacifica-cli market candles BTC -i 4h         # Candlestick data (default 200 bars)
+pacifica-cli market candles BTC -i 1m -c 4000 # Up to 4000 bars in one request (per-request max)
+pacifica-cli market candles BTC -i 1m -c 8000 # >4000 auto-paginates across requests
 pacifica-cli market funding SOL -l 50         # Funding rate history
 ```
+
+**Candles (`market candles`):** The Pacifica `/kline` API returns at most **4000 bars per
+request**. Use `-c, --count <n>` to fetch the N most recent bars (default `200`); when `n` exceeds
+4000 the CLI auto-paginates by windowing the time range backwards, deduping and sorting ascending
+by time, and returns up to `n` bars. Intervals: `1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 1d`.
+For an explicit window use `--start <ms>` (and optional `--end <ms>`); a range wider than the
+4000-bar cap is rejected with a clear message — use `--count` to page through more.
 
 #### Orders (auth required)
 

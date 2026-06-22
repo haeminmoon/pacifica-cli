@@ -59,7 +59,7 @@ src/
 | `GET /info/prices`                         | All symbol prices        |
 | `GET /book?symbol=`                        | Orderbook                |
 | `GET /trades?symbol=`                      | Recent trades            |
-| `GET /kline?symbol=&interval=&start_time=` | Candlestick data         |
+| `GET /kline?symbol=&interval=&start_time=&end_time=&limit=` | Candlestick data — max **4000 bars/request** (`limit` clamped to 4000; wider time ranges return HTTP 400). `getCandlesPaginated()` windows the range backwards for larger counts. Intervals: `1m,3m,5m,15m,30m,1h,2h,4h,8h,12h,1d` |
 | `GET /kline/mark_price`                    | Mark price candles       |
 | `GET /funding_rate/history?symbol=`        | Funding rate history     |
 | `GET /account?account=`                    | Account info             |

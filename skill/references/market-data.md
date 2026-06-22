@@ -126,10 +126,15 @@ pacifica-cli market candles SOL -i 1d -o json
 | Interval | Description |
 |----------|-------------|
 | `1m` | 1 minute |
+| `3m` | 3 minutes |
 | `5m` | 5 minutes |
 | `15m` | 15 minutes |
+| `30m` | 30 minutes |
 | `1h` | 1 hour |
+| `2h` | 2 hours |
 | `4h` | 4 hours |
+| `8h` | 8 hours |
+| `12h` | 12 hours |
 | `1d` | 1 day |
 
 ### Candle Fields
@@ -144,18 +149,38 @@ pacifica-cli market candles SOL -i 1d -o json
 | `volume` | Volume |
 | `trades` | Number of trades |
 
+### Number of Bars & Pagination
+
+The Pacifica `/kline` API returns **at most 4000 bars per request**. The CLI exposes this through
+`-c, --count <n>` (default `200`), which fetches the N most-recent bars ending now (or at `--end`):
+
+```bash
+# Default: 200 most-recent bars
+pacifica-cli market candles BTC -i 1m
+
+# Up to the per-request maximum (single request; may be slightly fewer due to market gaps)
+pacifica-cli market candles BTC -i 1m -c 4000 -o json
+
+# More than 4000: the CLI AUTO-PAGINATES, windowing the time range backwards in
+# <=4000-bar chunks, deduping and sorting ascending by time, capped at the requested count
+pacifica-cli market candles BTC -i 1m -c 8000 -o json | jq 'length'   # ~8000
+```
+
+When `--count` exceeds 4000 the CLI issues multiple `/kline` requests automatically — no manual
+paging needed. Bars are returned oldest-first with no duplicates, and never more than `--count`.
+
 ### Custom Time Range
 
 ```bash
-# Last 24 hours (default)
-pacifica-cli market candles BTC -i 1h
-
-# Custom start time (milliseconds)
+# Custom start time (milliseconds). Overrides --count; a single request only.
 pacifica-cli market candles BTC -i 1h --start 1700000000000
 
 # Custom range
 pacifica-cli market candles BTC -i 1h --start 1700000000000 --end 1700100000000
 ```
+
+A `--start`/`--end` range wider than 4000 bars is rejected with a clear message (it does not leak a
+raw server error). To pull more than 4000 bars, use `--count <n>` so the CLI auto-paginates.
 
 ## Funding Rates
 

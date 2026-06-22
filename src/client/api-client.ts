@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import { BASE_URLS } from "../config/constants";
+import { BASE_URLS, CANDLE_MAX_BARS, intervalToMs } from "../config/constants";
 import { SignerConfig, signPayload } from "../signing/signer";
 import {
   ApiResponse,
@@ -77,11 +77,17 @@ export class PacificaApiClient {
     return res.data;
   }
 
+  /**
+   * Single /kline request. The API caps the time range at {@link CANDLE_MAX_BARS}
+   * candles; a wider range returns HTTP 400. `limit` is clamped so an oversized
+   * caller-supplied value never produces a raw server error.
+   */
   async getCandles(
     symbol: string,
     interval: string,
     startTime: number,
-    endTime?: number
+    endTime?: number,
+    limit?: number
   ): Promise<ApiResponse<Candle[]>> {
     const params: Record<string, unknown> = {
       symbol,
@@ -89,8 +95,69 @@ export class PacificaApiClient {
       start_time: startTime,
     };
     if (endTime !== undefined) params.end_time = endTime;
+    if (limit !== undefined) {
+      params.limit = Math.min(Math.max(1, Math.floor(limit)), CANDLE_MAX_BARS);
+    }
     const res = await this.http.get("/kline", { params });
     return res.data;
+  }
+
+  /**
+   * Fetch up to `maxBars` candles ending at `endTime` by walking the time range
+   * backwards in windows of at most {@link CANDLE_MAX_BARS} candles (the API has
+   * no cursor — pagination is time-range windowing). Results are deduped by open
+   * time, sorted ascending, and trimmed to `maxBars`.
+   *
+   * @param startTime  oldest open time to fetch back to (inclusive)
+   * @param endTime    newest time to fetch up to (defaults to now)
+   * @param maxBars    maximum number of candles to return
+   */
+  async getCandlesPaginated(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime: number | undefined,
+    maxBars: number
+  ): Promise<ApiResponse<Candle[]>> {
+    const intervalMs = intervalToMs(interval);
+    // The server rejects a window whose range spans `limit` or more intervals,
+    // so each window covers at most CANDLE_MAX_BARS - 1 intervals while we pass
+    // the full cap as the limit (e.g. 3999 < 4000 passes the range check).
+    const windowSpanMs = (CANDLE_MAX_BARS - 1) * intervalMs;
+
+    const byOpenTime = new Map<number, Candle>();
+    let windowEnd = endTime ?? Date.now();
+
+    while (byOpenTime.size < maxBars && windowEnd > startTime) {
+      const windowStart = Math.max(startTime, windowEnd - windowSpanMs);
+      const res = await this.getCandles(
+        symbol,
+        interval,
+        windowStart,
+        windowEnd,
+        CANDLE_MAX_BARS
+      );
+      const batch = res.data || [];
+      if (batch.length === 0) break;
+
+      let oldest = windowEnd;
+      for (const candle of batch) {
+        byOpenTime.set(candle.t, candle);
+        if (candle.t < oldest) oldest = candle.t;
+      }
+
+      // Walk back to just before the oldest candle we just received. If the
+      // window produced nothing older than where we are, stop to avoid looping.
+      const nextEnd = oldest - 1;
+      if (nextEnd >= windowEnd) break;
+      windowEnd = nextEnd;
+    }
+
+    const sorted = Array.from(byOpenTime.values()).sort((a, b) => a.t - b.t);
+    // Keep the most recent `maxBars` candles (the tail after ascending sort).
+    const trimmed =
+      sorted.length > maxBars ? sorted.slice(sorted.length - maxBars) : sorted;
+    return { data: trimmed };
   }
 
   async getHistoricalFunding(

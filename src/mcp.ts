@@ -3,7 +3,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { createPublicClient, createAuthClient } from "./commands/_helpers";
-import { BUILDER_CODE, BUILDER_MAX_FEE_RATE } from "./config/constants";
+import {
+  BUILDER_CODE,
+  BUILDER_MAX_FEE_RATE,
+  CANDLE_INTERVALS,
+  CANDLE_MAX_BARS,
+  intervalToMs,
+} from "./config/constants";
 
 function mcpText(text: string) {
   return { content: [{ type: "text" as const, text }] };
@@ -55,15 +61,51 @@ server.tool(
 
 server.tool(
   "get_candles",
-  "Get candlestick data for a symbol",
+  `Get candlestick (OHLCV) data for a symbol. A single API request returns up to ${CANDLE_MAX_BARS} candles; pass "count" above that to auto-paginate across requests.`,
   {
     symbol: z.string(),
-    interval: z.string().describe("1m,5m,15m,1h,4h,1d"),
-    start_time: z.number().describe("Start time in ms"),
-    end_time: z.number().optional().describe("End time in ms"),
+    interval: z.enum(CANDLE_INTERVALS).describe(CANDLE_INTERVALS.join(",")),
+    count: z
+      .number()
+      .optional()
+      .describe(
+        `Number of most-recent candles to fetch (auto-paginates above ${CANDLE_MAX_BARS}). Ignored when start_time is given.`
+      ),
+    start_time: z
+      .number()
+      .optional()
+      .describe("Start time in ms (overrides count; single request)"),
+    end_time: z.number().optional().describe("End time in ms (defaults to now)"),
   },
-  async ({ symbol, interval, start_time, end_time }) => {
-    return withErrorHandling(() => createPublicClient().getCandles(symbol, interval, start_time, end_time));
+  async ({ symbol, interval, count, start_time, end_time }) => {
+    return withErrorHandling(async () => {
+      const client = createPublicClient();
+      if (start_time !== undefined) {
+        return client.getCandles(symbol, interval, start_time, end_time, CANDLE_MAX_BARS);
+      }
+      const n = count ?? 200;
+      const intervalMs = intervalToMs(interval);
+      const refEnd = end_time ?? Date.now();
+      // A single request's time range must span fewer than CANDLE_MAX_BARS
+      // intervals, so keep the window one interval narrower than the cap.
+      const maxSpanBars = CANDLE_MAX_BARS - 1;
+      if (n <= CANDLE_MAX_BARS) {
+        const startTime = refEnd - Math.min(n, maxSpanBars) * intervalMs;
+        const res = await client.getCandles(
+          symbol,
+          interval,
+          startTime,
+          end_time,
+          CANDLE_MAX_BARS
+        );
+        const bars = res.data || [];
+        return {
+          data: bars.length > n ? bars.slice(bars.length - n) : bars,
+        };
+      }
+      const startTime = refEnd - n * intervalMs;
+      return client.getCandlesPaginated(symbol, interval, startTime, end_time, n);
+    });
   }
 );
 

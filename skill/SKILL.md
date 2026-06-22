@@ -137,9 +137,28 @@ These commands work without config. Use them for price checks, instrument discov
 | `pacifica-cli market orderbook BTC` | Orderbook with bids and asks |
 | `pacifica-cli market orderbook BTC --depth 5` | With aggregation level |
 | `pacifica-cli market trades ETH` | Recent trades |
-| `pacifica-cli market candles BTC -i 4h` | Candlestick data |
-| `pacifica-cli market candles BTC -i 1h --start <ms>` | With custom start time |
+| `pacifica-cli market candles BTC -i 4h` | Candlestick data (default 200 bars) |
+| `pacifica-cli market candles BTC -i 1m -c 4000` | Up to 4000 bars in one request (per-request max) |
+| `pacifica-cli market candles BTC -i 1m -c 8000` | More than 4000 bars (auto-paginates) |
+| `pacifica-cli market candles BTC -i 1h --start <ms>` | Explicit window (single request, <=4000 bars) |
 | `pacifica-cli market funding SOL -l 50` | Funding rate history |
+
+#### Candlestick Data (intervals & pagination)
+
+Supported intervals: `1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 1d`.
+
+The `/kline` API returns **at most 4000 bars per request**. Use `-c, --count <n>` (default `200`) to
+fetch the N most-recent bars. When `n` exceeds 4000, the CLI auto-paginates — it windows the time
+range backwards in `<=4000`-bar chunks, dedupes, sorts ascending by time, and returns up to `n` bars.
+
+```bash
+pacifica-cli market candles BTC -i 1m -c 4000 -o json | jq 'length'   # ~4000 (one request)
+pacifica-cli market candles BTC -i 1m -c 8000 -o json | jq 'length'   # ~8000 (auto-paginated)
+```
+
+`--start <ms>` (with optional `--end <ms>`) requests an explicit window in a single request; a range
+wider than 4000 bars is rejected with a clear message rather than a raw server error — use `--count`
+to page through more.
 
 ### Trading (Authentication Required)
 

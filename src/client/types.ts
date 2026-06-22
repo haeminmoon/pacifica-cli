@@ -50,6 +50,7 @@ export interface RecentTrade {
 /** GET /kline */
 export interface Candle {
   t: number;
+  T: number;
   o: string;
   h: string;
   l: string;

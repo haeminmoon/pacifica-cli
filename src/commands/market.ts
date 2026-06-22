@@ -1,8 +1,9 @@
 import { Command } from "commander";
 import { createPublicClient } from "./_helpers";
 import { output, getOutputFormat } from "../output/formatter";
-import { handleError } from "../output/error";
-import { formatNumber, formatTimestamp } from "../utils/helpers";
+import { handleError, ActionableError } from "../output/error";
+import { formatNumber, formatTimestamp, parseIntStrict } from "../utils/helpers";
+import { CANDLE_INTERVALS, CANDLE_MAX_BARS, intervalToMs } from "../config/constants";
 
 export function registerMarketCommands(program: Command): void {
   const market = program
@@ -149,28 +150,96 @@ export function registerMarketCommands(program: Command): void {
 
   market
     .command("candles")
-    .description("Get candlestick data")
+    .description(
+      `Get candlestick (OHLCV) data. Up to ${CANDLE_MAX_BARS} bars per API request; ` +
+        `--count above that auto-paginates across multiple requests`
+    )
     .argument("<symbol>", "Trading symbol")
     .option(
       "-i, --interval <interval>",
-      "Candle interval (1m,5m,15m,1h,4h,1d)",
+      `Candle interval (${CANDLE_INTERVALS.join(",")})`,
       "1h"
     )
     .option(
-      "--start <timestamp>",
-      "Start time in ms",
-      String(Date.now() - 24 * 60 * 60 * 1000)
+      "-c, --count <n>",
+      `Number of most-recent candles to fetch (auto-paginates above ${CANDLE_MAX_BARS})`,
+      "200"
     )
-    .option("--end <timestamp>", "End time in ms")
+    .option(
+      "--start <timestamp>",
+      "Start time in ms (overrides --count; clamped to a single request)"
+    )
+    .option("--end <timestamp>", "End time in ms (defaults to now)")
     .action(async (symbol: string, options) => {
       try {
         const client = createPublicClient();
-        const result = await client.getCandles(
-          symbol,
-          options.interval,
-          parseInt(options.start),
-          options.end ? parseInt(options.end) : undefined
-        );
+        const intervalMs = intervalToMs(options.interval);
+        const endTime = options.end
+          ? parseIntStrict(options.end, "--end")
+          : undefined;
+
+        // The server caps a single request at CANDLE_MAX_BARS candles, but the
+        // limit is on the time-RANGE width: a span of CANDLE_MAX_BARS intervals
+        // is rejected, so the widest safe single-request window is one interval
+        // narrower.
+        const maxSpanBars = CANDLE_MAX_BARS - 1;
+
+        let result;
+        if (options.start !== undefined) {
+          // Explicit time range: single request, clamped to the per-request cap.
+          const startTime = parseIntStrict(options.start, "--start");
+          const refEnd = endTime ?? Date.now();
+          const spanBars = Math.ceil((refEnd - startTime) / intervalMs);
+          if (spanBars > maxSpanBars) {
+            throw new ActionableError(
+              `Requested time range spans ~${spanBars} ${options.interval} candles, ` +
+                `but a single request is capped at ${CANDLE_MAX_BARS}.`,
+              `Use --count <n> to auto-paginate, or narrow the --start/--end range.`
+            );
+          }
+          result = await client.getCandles(
+            symbol,
+            options.interval,
+            startTime,
+            endTime,
+            CANDLE_MAX_BARS
+          );
+        } else {
+          const count = parseIntStrict(options.count, "--count");
+          if (count <= 0) {
+            throw new ActionableError(
+              `--count must be a positive integer (got ${options.count}).`
+            );
+          }
+          const refEnd = endTime ?? Date.now();
+          if (count <= CANDLE_MAX_BARS) {
+            // Single request. The server's range check requires the window to
+            // span fewer than `limit` intervals, so request the full cap as the
+            // limit and keep the window within the safe span; trim the result
+            // back to `count` so the output never exceeds what was requested.
+            const startTime = refEnd - Math.min(count, maxSpanBars) * intervalMs;
+            const res = await client.getCandles(
+              symbol,
+              options.interval,
+              startTime,
+              endTime,
+              CANDLE_MAX_BARS
+            );
+            const bars = res.data || [];
+            result = {
+              data: bars.length > count ? bars.slice(bars.length - count) : bars,
+            };
+          } else {
+            const startTime = refEnd - count * intervalMs;
+            result = await client.getCandlesPaginated(
+              symbol,
+              options.interval,
+              startTime,
+              endTime,
+              count
+            );
+          }
+        }
 
         const formatted = (result.data || []).map((c) => ({
           time: formatTimestamp(c.t),
